@@ -4,23 +4,25 @@
 #include <time.h>
 #include <stdbool.h>
 
+
 #include <pthread.h>
 #include <string.h>
 
+#include "graph.h"
+#include "cJSON/cJSON.h" 
 
 #define WEIGHTS 5
 #define LR 0.3
 #define RUN 1
 #define STOP 0
 
+// #define DEBUG
 
-#define DEBUG
 
 
 double res = 0;
 double error=0.0;
-
-static double w[WEIGHTS]={1,0,0,0,0};
+static double w[WEIGHTS]={0,0,0,0,1};
 
 void  distrib_weights(bool *inputs,bool value,bool result) {
     
@@ -40,11 +42,39 @@ void  distrib_weights(bool *inputs,bool value,bool result) {
     }
   
 }
+// void _print_graph(){
+    
+//     glClear(GL_COLOR_BUFFER_BIT); // Очистка буфера цвета
+//     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB); // Установка режима отображения
+//     glutInitWindowSize(400, 400); // Установка размеров окна
+//     glutCreateWindow("OpenGL Graph"); // Создание окна с заголовком
 
+//     // glClearColor(1.0, 1.0, 1.0, 1.0); // Установка цвета фона (белый)
+//     gluOrtho2D(-1.1, 1.1, -1.1, 1.1); // Установка системы координат
+    
+//     glutDisplayFunc(renderGraph); // Установка функции отрисовки
+
+//     glutMainLoop(); // Запуск главного цикла GLUT
+// }
 double first_activate(const double net) {
      return net>=0 ? 1 : 0;
 }
 
+void _null_weights(bool flag)
+{
+
+if(flag==true) 
+{
+  for(int i=0; i<WEIGHTS;++i) 
+  {
+      printf("\n I=%d \n ",i);
+      w[i]=0;
+  }
+}else{
+  printf("\n weights don't change \n ");
+}
+
+}
 
 bool*  _table()
 {
@@ -100,10 +130,7 @@ bool* output(){
 }
 double net(const bool *inputs,int size) {
 
-  
-#ifdef DEBUG
-    // printf("\nW=%f \t",w[i]);
-#endif
+
    for(int i=1;i<size;i++){
     res =+ w[i] * inputs[i]+w[4];
   }
@@ -116,8 +143,8 @@ double net(const bool *inputs,int size) {
 }
 
 double second_activate(const double net){
-   double res=0.0;
-   return res=0.5*(net/(1+fabs(net)+1));
+   
+  return res=0.5*(net/(1+fabs(net)+1));
 
 }
 
@@ -138,7 +165,6 @@ bool boolean_func(bool result, bool *inputs)
 #ifdef DEBUG
         printf("True - Expected  %d : Actual %d \n ",value,result);
 #endif 
-            
         return true;
       }else{
 #ifdef DEBUG
@@ -159,6 +185,7 @@ bool *iPointer_T=pT;
 for(int j=0;j<16;j++){
 
 for(int i=0; i<4; i++){
+    // printf("Итерация %d", i);
     inputs[i] = *(iPointer_T+i);
   
 }
@@ -171,16 +198,18 @@ for(int i=0; i<4; i++){
   }else{
     continue;
   }
-  
-}
 
+
+}
 iPointer_T=pT;
 iPointer_F=pF;
 return error;
 
 }
 
-int run_second(bool *pF,bool *pT){
+
+int run_second(bool *pF,bool *pT)
+{
 
 bool inputs[4];
 int error=0;
@@ -189,7 +218,7 @@ bool *iPointer_T=pT;
 for(int j=0;j<16;j++){
 
 for(int i=0; i<4; i++){
-    printf(" ");
+    // printf("Итерация %d", i);
     inputs[i] = *(iPointer_T+i);
   
 }
@@ -203,54 +232,93 @@ for(int i=0; i<4; i++){
     continue;
   }
   
-}
 
+  
+
+
+}
 iPointer_T=pT;
 iPointer_F=pF;
 return error;
 
 }
 
+void init(void) 
+{
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glColor3f(1.0, 1.0, 1.0);
+    glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
+}
 
-int main(void) {
+
+int main(int argc, char** argv) {
   int i,j=0;
-
   srand(time(NULL));  
   
-  
+
+
   bool *pTable = output();
   bool *pFunc_ = _table();
+  cJSON *root = cJSON_CreateObject(); // Создание корневого объекта JSON
+
   int era=0;
 
   int error = run(pFunc_,pTable+era);
-  while(error>0){
-    error = run(pFunc_,pTable+era);
+ 
+
+
   
+  while(error>0){
+  saveIntegerValueToJsonFile("data.json","error",error,root);
+  error = run(pFunc_,pTable+era);
   printf("\n sum_error %d", error);
   era+=4;
-  printf("\n Era =  %d \n", era/4);
+  
     
-  if(error==0){
+  if( error == 0 ){
+  
     break;
+
   }else{
+
     continue;
   }
   };
+saveIntegerValueToJsonFile("data.json","era first",(era/4)-1,root);
 
-//   int error = run_second(pFunc_,pTable+era);
-//   while(error>0){
-//     error = run_second(pFunc_,pTable+era);
-  
-//   printf("\n sum_error %d", error);
-//   era+=4;
-//   printf("\n Era =  %d \n", era/4);
+error = run_second(pFunc_,pTable+era);
+
+printf("error around  %d",error);
+
+_null_weights(true);
+
+while(error>0){
     
-//   if(error==0){
-//     break;
-//   }else{
-//     continue;
-//   }
-//   };
+    error = run_second(pFunc_,pTable+era);
+  
+    printf("\n sum_error %d", error);
+    era+=4;
+    printf("\n ineration A =  %d \n", era/4);
+    
+    if(error==0){
+  
+      break;
+  
+    }else{
 
+      continue;
+    
+    }
+  };
+ 
+
+  glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(250, 250);
+    glutInitWindowPosition(100, 100);
+    glutCreateWindow("simple");
+    init();
+    glutDisplayFunc(renderGraph);
+    glutMainLoop();
 
 };
