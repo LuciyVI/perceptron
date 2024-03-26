@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <GL/glut.h>
-#include <cjson/cJSON.h> 
+#include "cjson/cJSON.h"
 
 
 void saveIntegerValueToJsonFile(const char* filename, const char* key, int value , cJSON *pointer_to_json) {
@@ -19,26 +19,27 @@ void saveIntegerValueToJsonFile(const char* filename, const char* key, int value
         
         char *updatedJsonString = cJSON_Print(pointer_to_json);
 
-
+        
         // Запись обновленных данных в файл
         FILE *updatedFile = fopen("data.json", "w");
         if (updatedFile != NULL) {
             fprintf(updatedFile, "%s", updatedJsonString);
-            fclose(updatedFile);
+            
         }
         
         free(updatedJsonString);
+    fclose(updatedFile);
     }
 
 // Функция отрисовки графика
 void renderGraph() {
 
-    glClear(GL_COLOR_BUFFER_BIT); // Очистка буфера цвета
+    
     // Настройка параметров графика
     glColor3f(1.0, 0.0, 0.0); // Установка цвета (красный)
     glLineWidth(10.0); // Установка толщины линии
 FILE *data = fopen("data.json", "r");
-        if (data != NULL) {
+        if (data == NULL) {
             printf("Ошибка открытия файла\n");
         }
 
@@ -54,24 +55,27 @@ FILE *data = fopen("data.json", "r");
     free(jsonData);
     cJSON *value = cJSON_GetObjectItem(root, "error");
     
-    int y = 1;
+    int x = 1;
     
     // Отрисовка графика
-    glBegin(GL_LINE_STRIP); // Начало отрисовки линии
-  
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(-40.0f, 40.0f, -40.0f, 40.0f, -1.0f, 1.0f);
             
+    glBegin(GL_LINE_STRIP); // Начало отрисовки линии
     while (value != NULL) {
             
             printf("x=%d\n",value->valueint);
-            glVertex2i(value->valueint, y);
+            glVertex2i(x,value->valueint);
+            
             value = value->next;
             
-            printf("y=%d\n",y);
-            ++y;
+            printf("y=%d\n",x);
+        x++;
             
         }
-    
     glEnd(); // Завершение отрисовки линии
+    
 
     glFlush(); // Принудительная отрисовка
 }
