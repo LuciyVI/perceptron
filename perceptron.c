@@ -42,20 +42,20 @@ void  distrib_weights(bool *inputs,bool value,bool result) {
     }
   
 }
-// void _print_graph(){
+void _print_graph(){
     
-//     glClear(GL_COLOR_BUFFER_BIT); // Очистка буфера цвета
-//     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB); // Установка режима отображения
-//     glutInitWindowSize(400, 400); // Установка размеров окна
-//     glutCreateWindow("OpenGL Graph"); // Создание окна с заголовком
+    glClear(GL_COLOR_BUFFER_BIT); // Очистка буфера цвета
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB); // Установка режима отображения
+    glutInitWindowSize(400, 400); // Установка размеров окна
+    glutCreateWindow("OpenGL Graph"); // Создание окна с заголовком
 
-//     // glClearColor(1.0, 1.0, 1.0, 1.0); // Установка цвета фона (белый)
-//     gluOrtho2D(-1.1, 1.1, -1.1, 1.1); // Установка системы координат
+    // glClearColor(1.0, 1.0, 1.0, 1.0); // Установка цвета фона (белый)
+    gluOrtho2D(-1.1, 1.1, -1.1, 1.1); // Установка системы координат
     
-//     glutDisplayFunc(renderGraph); // Установка функции отрисовки
+    glutDisplayFunc(renderGraph); // Установка функции отрисовки
 
-//     glutMainLoop(); // Запуск главного цикла GLUT
-// }
+    glutMainLoop(); // Запуск главного цикла GLUT
+}
 double first_activate(const double net) {
      return net>=0 ? 1 : 0;
 }
@@ -243,12 +243,6 @@ return error;
 
 }
 
-void init(void) 
-{
-    glClearColor(0.0, 0.0, 0.0, 0.0);
-    glColor3f(1.0, 1.0, 1.0);
-    glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
-}
 
 
 int main(int argc, char** argv) {
@@ -313,12 +307,6 @@ while(error>0){
  
 
   glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-    glutInitWindowSize(250, 250);
-    glutInitWindowPosition(100, 100);
-    glutCreateWindow("simple");
-    init();
-    glutDisplayFunc(renderGraph);
-    glutMainLoop();
+    _print_graph( );
 
 };
