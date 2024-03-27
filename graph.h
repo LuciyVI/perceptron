@@ -7,7 +7,7 @@ void saveIntegerValueToJsonFile(const char* filename, const char* key, int value
     
     
     // Чтение существующего JSON файла
-    FILE *file = fopen("data.json", "r");
+    FILE *file = fopen(filename, "r");
     cJSON *existingValue = cJSON_GetObjectItem(pointer_to_json, key);
         if (existingValue != NULL && cJSON_IsArray(existingValue)) {
     // Если запись по ключу уже существует, добавляем новое значение в массив
@@ -21,7 +21,7 @@ void saveIntegerValueToJsonFile(const char* filename, const char* key, int value
 
         
         // Запись обновленных данных в файл
-        FILE *updatedFile = fopen("data.json", "w");
+        FILE *updatedFile = fopen(filename, "w");
         if (updatedFile != NULL) {
             fprintf(updatedFile, "%s", updatedJsonString);
             
@@ -32,15 +32,11 @@ void saveIntegerValueToJsonFile(const char* filename, const char* key, int value
     }
 
 // Функция отрисовки графика
-void renderGraph() {
+void renderGraph(const char* filename) {
 
-    
-    // Настройка параметров графика
-    glColor3f(1.0, 0.0, 0.0); // Установка цвета (красный)
-    glLineWidth(5.0); // Установка толщины линии
-FILE *data = fopen("data.json", "r");
+FILE *data = fopen(filename, "r");
         if (data == NULL) {
-            printf("Ошибка открытия файла\n");
+            perror("Ошибка открытия файла\n");
         }
 
     fseek(data, 0, SEEK_END);
@@ -53,29 +49,29 @@ FILE *data = fopen("data.json", "r");
 
     cJSON *root = cJSON_Parse(jsonData);
     free(jsonData);
+    
+    int x,y=0;
+    printf("\n \n  \033[1;35mk(error)\033[0m \n");
+    for (x = 20;x!=-1 ;--x) 
+    { 
     cJSON *value = cJSON_GetObjectItem(root, "error");
-    
-    int x = 1;
-    
-    // Отрисовка графика
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(-40.0f, 40.0f, -40.0f, 40.0f, -1.0f, 1.0f);
-            
-    glBegin(GL_LINE_STRIP); // Начало отрисовки линии
-    while (value != NULL) {
-            
-            printf("x=%d\n",value->valueint);
-            glVertex2i(x,value->valueint);
-            
-            value = value->next;
-            
-            printf("y=%d\n",x);
-        x++;
-            
-        }
-    glEnd(); // Завершение отрисовки линии
-    
-
-    glFlush(); // Принудительная отрисовка
+        for (y = 0; y <= 25 ; ++y) 
+        { 
+            if (x == value->valueint) 
+                printf("\033[1;31m*\033[0m"); 
+            else if (y == 0 && y == 0) 
+                printf("\033[1;35m%d\033[0m\033[1;32m|\033[0m",y+x); 
+            else if (y == 0) 
+                printf(" "); 
+            else if (x==0 && y==25)
+            printf("\033[1;37m>\033[0m");
+            else if (x== 0) 
+                printf("\033[1;32m---\033[0m"); 
+            else 
+                printf("\033[1;37m \033[0m"); 
+        value = value->next;
+        } 
+        printf("\n"); 
+    } 
+    printf("\t\t\t  \033[1;35mОсь X (эпохи)\033[0m");
 }

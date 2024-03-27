@@ -3,11 +3,9 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glut.h>
+#include <fcntl.h>
+  
 
-#include <pthread.h>
 #include <string.h>
 
 #include "graph.h"
@@ -44,20 +42,7 @@ void  distrib_weights(bool *inputs,bool value,bool result) {
     }
   
 }
-void _print_graph(){
-    
-    glClear(GL_COLOR_BUFFER_BIT); // Очистка буфера цвета
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB); // Установка режима отображения
-    glutInitWindowSize(400, 400); // Установка размеров окна
-    glutCreateWindow("OpenGL Graph"); // Создание окна с заголовком
 
-    // glClearColor(1.0, 1.0, 1.0, 1.0); // Установка цвета фона (белый)
-    gluOrtho2D(-1.1, 1.1, -1.1, 1.1); // Установка системы координат
-    
-    glutDisplayFunc(renderGraph); // Установка функции отрисовки
-
-    glutMainLoop(); // Запуск главного цикла GLUT
-}
 double first_activate(const double net) {
      return net>=0 ? 1 : 0;
 }
@@ -239,9 +224,9 @@ for(int i=0; i<4; i++){
 
 
 }
-iPointer_T=pT;
-iPointer_F=pF;
-return error;
+    iPointer_T=pT;
+    iPointer_F=pF;
+    return error;
 
 }
 
@@ -280,21 +265,26 @@ int main(int argc, char** argv) {
     continue;
   }
   };
-
+  renderGraph("data.json");
 
 error = run_second(pFunc_,pTable+era);
 
-printf("error around  %d",error);
-
 _null_weights(true);
+
 era=0;
+
+remove("data.json");
+
+
 while(error>0){
-    
+  
+    // saveIntegerValueToJsonFile("data.json","error",error,root);
+
     error = run_second(pFunc_,pTable+era);
   
-    printf("\n sum_error %d", error);
+    
     era+=4;
-    printf("\n ineration A =  %d \n", era/4);
+    
     
     if(error==0){
   
@@ -308,7 +298,7 @@ while(error>0){
   };
  
 
-  glutInit(&argc, argv);
-    _print_graph( );
+  // renderGraph("data.json");
+
 
 };
