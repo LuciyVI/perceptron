@@ -37,7 +37,7 @@ void renderGraph() {
     
     // Настройка параметров графика
     glColor3f(1.0, 0.0, 0.0); // Установка цвета (красный)
-    glLineWidth(10.0); // Установка толщины линии
+    glLineWidth(5.0); // Установка толщины линии
 FILE *data = fopen("data.json", "r");
         if (data == NULL) {
             printf("Ошибка открытия файла\n");

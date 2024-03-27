@@ -3,13 +3,15 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>
-
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/glut.h>
 
 #include <pthread.h>
 #include <string.h>
 
 #include "graph.h"
-#include "cJSON/cJSON.h" 
+#include "cjson/cJSON.h" 
 
 #define WEIGHTS 5
 #define LR 0.3
@@ -257,11 +259,11 @@ int main(int argc, char** argv) {
 
   int era=0;
 
+  saveIntegerValueToJsonFile("data.json","error",error,root);
   int error = run(pFunc_,pTable+era);
  
 
 
-  
   while(error>0){
   saveIntegerValueToJsonFile("data.json","error",error,root);
   error = run(pFunc_,pTable+era);
@@ -278,14 +280,14 @@ int main(int argc, char** argv) {
     continue;
   }
   };
-saveIntegerValueToJsonFile("data.json","era first",(era/4)-1,root);
+
 
 error = run_second(pFunc_,pTable+era);
 
 printf("error around  %d",error);
 
 _null_weights(true);
-
+era=0;
 while(error>0){
     
     error = run_second(pFunc_,pTable+era);
