@@ -241,6 +241,7 @@ int main(int argc, char** argv) {
   bool *pTable = output();
   bool *pFunc_ = _table();
   cJSON *root = cJSON_CreateObject(); // Создание корневого объекта JSON
+  
 
   int era=0;
 
@@ -267,18 +268,20 @@ int main(int argc, char** argv) {
   };
   renderGraph("data.json");
 
-error = run_second(pFunc_,pTable+era);
-
 _null_weights(true);
 
 era=0;
 
-remove("data.json");
+cJSON_Delete(root); // очистка памяти после использования
 
+
+cJSON *root_second = cJSON_CreateObject(); // Создание корневого объекта JSON
+saveIntegerValueToJsonFile("data2.json","error",error,root_second);
+error = run_second(pFunc_,pTable+era);
 
 while(error>0){
   
-    // saveIntegerValueToJsonFile("data.json","error",error,root);
+    saveIntegerValueToJsonFile("data2.json","error",error,root_second);
 
     error = run_second(pFunc_,pTable+era);
   
@@ -286,7 +289,7 @@ while(error>0){
     era+=4;
     
     
-    if(error==0){
+    if(error==0){ 
   
       break;
   
@@ -298,7 +301,7 @@ while(error>0){
   };
  
 
-  // renderGraph("data.json");
+  renderGraph("data2.json");
 
 
 };

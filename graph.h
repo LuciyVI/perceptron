@@ -2,6 +2,17 @@
 #include <GL/glut.h>
 #include "cjson/cJSON.h"
 
+int findMax(cJSON* root) {
+    cJSON* current = root->child;
+    int max = current->valueint; // Предполагается, что элементы списка являются целыми числами
+    while (current != NULL) {
+        if (current->valueint > max) {
+            max = current->valueint;
+        }
+        current = current->next;
+    }
+    return max;
+}
 
 void saveIntegerValueToJsonFile(const char* filename, const char* key, int value , cJSON *pointer_to_json) {
     
@@ -49,13 +60,21 @@ FILE *data = fopen(filename, "r");
 
     cJSON *root = cJSON_Parse(jsonData);
     free(jsonData);
+
     
     int x,y=0;
+    
+    cJSON *value = cJSON_GetObjectItem(root, "error");
+    
+    
+    int max = findMax(root);
+    int array_size=cJSON_GetArraySize(root);
+    
     printf("\n \n  \033[1;35mk(error)\033[0m \n");
-    for (x = 20;x!=-1 ;--x) 
+    for (x = max;x!=-1 ;--x) 
     { 
     cJSON *value = cJSON_GetObjectItem(root, "error");
-        for (y = 0; y <= 25 ; ++y) 
+        for (y = 0; y <= array_size-1 ; ++y) 
         { 
             if (x == value->valueint) 
                 printf("\033[1;31m*\033[0m"); 
@@ -63,15 +82,16 @@ FILE *data = fopen(filename, "r");
                 printf("\033[1;35m%d\033[0m\033[1;32m|\033[0m",y+x); 
             else if (y == 0) 
                 printf(" "); 
-            else if (x==0 && y==25)
+            else if (x==0 && y==array_size-1)
             printf("\033[1;37m>\033[0m");
             else if (x== 0) 
-                printf("\033[1;32m---\033[0m"); 
+                printf("\033[1;32m-----\033[0m"); 
             else 
                 printf("\033[1;37m \033[0m"); 
         value = value->next;
         } 
-        printf("\n"); 
+        printf("\n");  
     } 
     printf("\t\t\t  \033[1;35mОсь X (эпохи)\033[0m");
+    
 }
