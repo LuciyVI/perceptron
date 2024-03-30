@@ -17,7 +17,7 @@
 #define STOP 0
 
 // #define DEBUG
-
+// #define RELEASE
 
 
 double res = 0;
@@ -302,6 +302,12 @@ while(error>0){
  
 
   renderGraph("data2.json");
+
+
+#ifdef RELEASE 
+remove("data.json");
+remove("data2.json");
+#endif 
 
 
 };
