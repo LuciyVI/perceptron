@@ -1,3 +1,2 @@
-freeglut3-dev
-cJSON
-
+No extra third-party libraries are required.
+Build with: clang perceptron.c -lm -o main

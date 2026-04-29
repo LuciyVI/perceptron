@@ -5,9 +5,10 @@
 #include <stdbool.h>
 #include <string.h>
 #include "graph.h"
-#include "cjson/cJSON.h"
 
 #define WEIGHTS 5
+#define INPUTS 4
+#define BIAS_INDEX (WEIGHTS - 1)
 #define LR 0.3
 
 static double w[WEIGHTS] = {0, 0, 0, 0, 1};
@@ -16,10 +17,12 @@ void distrib_weights(const bool *inputs, bool value, bool result) {
     double delta = 0.0;
     double error = value - result;
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < INPUTS; i++) {
         delta = LR * error * inputs[i];
-        w[i + 1] += delta;
+        w[i] += delta;
     }
+
+    w[BIAS_INDEX] += LR * error;
 }
 
 double first_activate(const double net) {
@@ -27,7 +30,7 @@ double first_activate(const double net) {
 }
 
 double second_activate(const double net) {
-    return 0.5 * (net / (1 + fabs(net) + 1));
+    return 0.5 * ((net / (1 + fabs(net))) + 1);
 }
 
 void _null_weights(bool flag) {
@@ -63,14 +66,13 @@ bool* output() {
 double net(const bool *inputs, int size) {
     double res = 0.0;
     for (int i = 0; i < size; i++) {
-        res += w[i + 1] * inputs[i];
+        res += w[i] * inputs[i];
     }
-    res += w[4];
+    res += w[BIAS_INDEX];
     return res;
 }
 
-bool boolean_func(bool result, const bool *inputs) {
-    bool value = !inputs[0] * inputs[1] * (!inputs[2] + inputs[3]);
+bool boolean_func(bool value, bool result, const bool *inputs) {
     if (value == result) {
         return true;
     } else {
@@ -79,18 +81,33 @@ bool boolean_func(bool result, const bool *inputs) {
     }
 }
 
-int run_generic(bool *pF, bool *pT, double (*activate)(const double)) {
-    bool inputs[4];
+int run_generic(const bool *function_values, const bool *truth_table, double (*activate)(const double)) {
+    bool inputs[INPUTS];
     int error = 0;
     for (int j = 0; j < 16; ++j) {
-        for (int i = 0; i < 4; ++i) {
-            inputs[i] = pT[j * 4 + i];
+        for (int i = 0; i < INPUTS; ++i) {
+            inputs[i] = truth_table[j * INPUTS + i];
         }
-        if (!boolean_func(activate(net(inputs, 4)), inputs)) {
+        bool predicted = activate(net(inputs, INPUTS)) >= 0.5;
+        if (!boolean_func(function_values[j], predicted, inputs)) {
             ++error;
         }
     }
     return error;
+}
+
+void train_and_render(const char *filename, const bool *function_values, const bool *truth_table, double (*activate)(const double), ErrorSeries *series) {
+    int error = run_generic(function_values, truth_table, activate);
+
+    while (true) {
+        saveIntegerValueToJsonFile(filename, "error", error, series);
+        if (error == 0) {
+            break;
+        }
+        error = run_generic(function_values, truth_table, activate);
+    }
+
+    renderGraph(series);
 }
 
 int main(int argc, char** argv) {
@@ -99,30 +116,18 @@ int main(int argc, char** argv) {
     bool *pTable = output();
     bool *pFunc_ = _table();
 
-    cJSON *root = cJSON_CreateObject();
-    int error = run_generic(pFunc_, pTable, first_activate);
-
-    while (error > 0) {
-        saveIntegerValueToJsonFile("data.json", "error", error, root);
-        error = run_generic(pFunc_, pTable, first_activate);
-    }
-    renderGraph("data.json");
+    ErrorSeries *first_graph = createErrorSeries();
+    train_and_render("data.json", pFunc_, pTable, first_activate, first_graph);
 
     _null_weights(true);
 
-    cJSON *root_second = cJSON_CreateObject();
-    error = run_generic(pFunc_, pTable, second_activate);
-
-    while (error > 0) {
-        saveIntegerValueToJsonFile("data2.json", "error", error, root_second);
-        error = run_generic(pFunc_, pTable, second_activate);
-    }
-    renderGraph("data2.json");
+    ErrorSeries *second_graph = createErrorSeries();
+    train_and_render("data2.json", pFunc_, pTable, second_activate, second_graph);
 
     free(pTable);
     free(pFunc_);
-    cJSON_Delete(root);
-    cJSON_Delete(root_second);
+    destroyErrorSeries(first_graph);
+    destroyErrorSeries(second_graph);
 
     return 0;
 }

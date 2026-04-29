@@ -1,109 +1,105 @@
+#ifndef GRAPH_H
+#define GRAPH_H
+
+#include <limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <GL/glut.h>
-#include "cjson/cJSON.h"
 
-// Функция для нахождения максимального значения в JSON массиве
-int findMax(cJSON *array) {
-    int max = INT_MIN; // Начальное значение
-    if (!cJSON_IsArray(array)) return max; // Проверка, что это массив
+typedef struct {
+    int *values;
+    size_t size;
+    size_t capacity;
+} ErrorSeries;
 
-    cJSON *current = NULL;
-    cJSON_ArrayForEach(current, array) {
-        if (cJSON_IsNumber(current) && current->valueint > max) {
-            max = current->valueint;
+ErrorSeries *createErrorSeries(void) {
+    return (ErrorSeries *)calloc(1, sizeof(ErrorSeries));
+}
+
+void destroyErrorSeries(ErrorSeries *series) {
+    if (!series) {
+        return;
+    }
+
+    free(series->values);
+    free(series);
+}
+
+int findMax(const ErrorSeries *series) {
+    if (!series || series->size == 0) {
+        return 0;
+    }
+
+    int max = INT_MIN;
+    for (size_t i = 0; i < series->size; ++i) {
+        if (series->values[i] > max) {
+            max = series->values[i];
         }
     }
     return max;
 }
 
-// Сохранение значения в JSON файл
-void saveIntegerValueToJsonFile(const char *filename, const char *key, int value) {
-    FILE *file = fopen(filename, "r");
-    if (!file) {
-        perror("Ошибка открытия файла для чтения");
-        return;
+bool ensureCapacity(ErrorSeries *series) {
+    if (series->size < series->capacity) {
+        return true;
     }
 
-    // Чтение содержимого файла
-    fseek(file, 0, SEEK_END);
-    long fileSize = ftell(file);
-    fseek(file, 0, SEEK_SET);
-    char *jsonData = (char *)malloc(fileSize + 1);
-    fread(jsonData, 1, fileSize, file);
-    fclose(file);
-    jsonData[fileSize] = '\0';
-
-    // Парсинг JSON данных
-    cJSON *root = cJSON_Parse(jsonData);
-    free(jsonData);
-    if (!root) {
-        fprintf(stderr, "Ошибка парсинга JSON\n");
-        return;
+    size_t new_capacity = series->capacity == 0 ? 8 : series->capacity * 2;
+    int *new_values = (int *)realloc(series->values, new_capacity * sizeof(int));
+    if (!new_values) {
+        fprintf(stderr, "Ошибка выделения памяти для графика\n");
+        return false;
     }
 
-    cJSON *existingArray = cJSON_GetObjectItem(root, key);
-    if (existingArray && cJSON_IsArray(existingArray)) {
-        cJSON_AddItemToArray(existingArray, cJSON_CreateNumber(value));
-    } else {
-        cJSON *newArray = cJSON_CreateArray();
-        cJSON_AddItemToArray(newArray, cJSON_CreateNumber(value));
-        cJSON_AddItemToObject(root, key, newArray);
-    }
-
-    char *updatedJsonString = cJSON_Print(root);
-    file = fopen(filename, "w");
-    if (file) {
-        fprintf(file, "%s", updatedJsonString);
-        fclose(file);
-    } else {
-        perror("Ошибка записи в файл");
-    }
-
-    cJSON_Delete(root);
-    free(updatedJsonString);
+    series->values = new_values;
+    series->capacity = new_capacity;
+    return true;
 }
 
-// Функция отрисовки графика
-void renderGraph(const char *filename) {
-    FILE *file = fopen(filename, "r");
+bool writeSeriesToJsonFile(const char *filename, const char *key, const ErrorSeries *series) {
+    FILE *file = fopen(filename, "w");
     if (!file) {
-        perror("Ошибка открытия файла");
-        return;
+        perror("Ошибка записи в файл");
+        return false;
     }
 
-    // Чтение содержимого файла
-    fseek(file, 0, SEEK_END);
-    long fileSize = ftell(file);
-    fseek(file, 0, SEEK_SET);
-    char *jsonData = (char *)malloc(fileSize + 1);
-    fread(jsonData, 1, fileSize, file);
+    fprintf(file, "{\n  \"%s\": [", key);
+    for (size_t i = 0; i < series->size; ++i) {
+        fprintf(file, "%s%d", i == 0 ? "" : ", ", series->values[i]);
+    }
+    fprintf(file, "]\n}\n");
     fclose(file);
-    jsonData[fileSize] = '\0';
 
-    cJSON *root = cJSON_Parse(jsonData);
-    free(jsonData);
-    if (!root) {
-        fprintf(stderr, "Ошибка парсинга JSON\n");
+    return true;
+}
+
+void saveIntegerValueToJsonFile(const char *filename, const char *key, int value, ErrorSeries *series) {
+    if (!series) {
+        fprintf(stderr, "Ошибка: серия значений не инициализирована\n");
         return;
     }
 
-    cJSON *array = cJSON_GetObjectItem(root, "error");
-    if (!cJSON_IsArray(array)) {
-        fprintf(stderr, "Ошибка: ключ 'error' не является массивом\n");
-        cJSON_Delete(root);
+    if (!ensureCapacity(series)) {
         return;
     }
 
-    int max = findMax(array);
-    int size = cJSON_GetArraySize(array);
+    series->values[series->size++] = value;
+    writeSeriesToJsonFile(filename, key, series);
+}
+
+void renderGraph(const ErrorSeries *series) {
+    if (!series || series->size == 0) {
+        fprintf(stderr, "Ошибка: нет данных для графика\n");
+        return;
+    }
+
+    int max = findMax(series);
 
     printf("\n \033[1;35mГрафик (error)\033[0m\n");
     for (int y = max; y >= 0; --y) {
         printf("%2d | ", y);
-        for (int x = 0; x < size; ++x) {
-            cJSON *item = cJSON_GetArrayItem(array, x);
-            if (item && cJSON_IsNumber(item) && item->valueint == y) {
+        for (size_t x = 0; x < series->size; ++x) {
+            if (series->values[x] == y) {
                 printf("\033[1;31m*\033[0m ");
             } else {
                 printf("  ");
@@ -113,14 +109,14 @@ void renderGraph(const char *filename) {
     }
 
     printf("    ");
-    for (int x = 0; x < size; ++x) {
+    for (size_t x = 0; x < series->size; ++x) {
         printf("---");
     }
     printf("\n     ");
-    for (int x = 0; x < size; ++x) {
-        printf("%2d ", x);
+    for (size_t x = 0; x < series->size; ++x) {
+        printf("%2zu ", x);
     }
     printf("\n");
-
-    cJSON_Delete(root);
 }
+
+#endif
